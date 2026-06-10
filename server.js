@@ -6,16 +6,25 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crawltoll = require("./index.js");
+const { serveFeed, FEED_PRICING } = require("./feed.js");
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = process.env.PUBLIC_DIR || path.join(__dirname, "public");
+const LEDGER = process.env.CRAWLTOLL_LEDGER || "/tmp/crawltoll-ledger.jsonl";
 
-const mw = crawltoll({
+const baseConfig = {
   payTo: process.env.CRAWLTOLL_PAYTO || "0x4e14B249D9A4c9c9352D780eCEB508A8eB7a7700",
   network: process.env.CRAWLTOLL_NETWORK || "base",
-  priceUSDC: process.env.CRAWLTOLL_PRICE || "0.005",
-  ledgerFile: process.env.CRAWLTOLL_LEDGER || "/tmp/crawltoll-ledger.jsonl",
-});
+  ledgerFile: LEDGER,
+};
+
+const mw = crawltoll({ ...baseConfig, priceUSDC: process.env.CRAWLTOLL_PRICE || "0.005" });
+
+// Per-feed toll middlewares (different price per endpoint)
+const feedMw = {};
+for (const [p, price] of Object.entries(FEED_PRICING)) {
+  feedMw[p] = crawltoll({ ...baseConfig, priceUSDC: price, chargeHumans: true }); // feeds are paid for everyone — it's a data product
+}
 
 const MIME = { ".html": "text/html", ".json": "application/json", ".txt": "text/plain", ".css": "text/css", ".js": "text/javascript", ".png": "image/png", ".svg": "image/svg+xml" };
 
@@ -42,5 +51,24 @@ http.createServer((req, res) => {
   res.status = (c) => { res.statusCode = c; return res; };
   res.set = (k, v) => { res.setHeader(k, v); return res; };
   res.json = (o) => { res.setHeader("Content-Type", "application/json"); res.end(JSON.stringify(o)); };
+
+  // /feed index is free discovery; /feed/* are priced data products behind the toll
+  if (req.path === "/feed") {
+    return serveFeed("/feed").then((d) => res.json(d)).catch(() => { res.statusCode = 502; res.end("feed error"); });
+  }
+  if (FEED_PRICING[req.path]) {
+    return feedMw[req.path](req, res, async () => {
+      try {
+        const data = await serveFeed(req.path);
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader("Cache-Control", "no-store");
+        res.end(JSON.stringify(data));
+      } catch (e) {
+        res.statusCode = 502; res.end(JSON.stringify({ error: "feed_upstream_error" }));
+      }
+    });
+  }
+
+  // everything else: page toll + static
   mw(req, res, () => serveStatic(req, res));
-}).listen(PORT, () => console.log(`CRAWLTOLL toll booth live on :${PORT}`));
+}).listen(PORT, () => console.log(`CRAWLTOLL toll booth + signal feed live on :${PORT}`));

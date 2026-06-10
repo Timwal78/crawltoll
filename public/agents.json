@@ -14,10 +14,28 @@
   },
   "endpoints": [
     {
-      "path": "/*",
+      "path": "/feed/squeeze",
       "method": "GET",
       "price_usdc": "0.005",
-      "description": "Any content page — pay per fetch"
+      "description": "Technical squeeze hits, score-ranked"
+    },
+    {
+      "path": "/feed/options",
+      "method": "GET",
+      "price_usdc": "0.01",
+      "description": "Graded 0DTE-14D options picks"
+    },
+    {
+      "path": "/feed/universe",
+      "method": "GET",
+      "price_usdc": "0.02",
+      "description": "Full market scan snapshot"
+    },
+    {
+      "path": "/feed/firehose",
+      "method": "GET",
+      "price_usdc": "0.05",
+      "description": "All signals, single pull"
     }
   ],
   "contact": "admin@scriptmasterlabs.com"
