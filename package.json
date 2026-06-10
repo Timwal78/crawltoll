@@ -47,6 +47,9 @@
   "files": [
     "index.js",
     "bin/",
-    "README.md"
+    "README.md",
+    "ap2.js",
+    "feed.js",
+    "server.js"
   ]
 }
