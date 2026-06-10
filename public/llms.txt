@@ -1,0 +1,13 @@
+# scriptmasterlabs.com
+# AI/LLM access policy — powered by CRAWLTOLL (x402)
+
+> Content on this site is available to AI agents on a pay-per-fetch basis.
+> Protocol: x402 (HTTP 402 Payment Required)
+> Payment: USDC on base
+> Price: 0.005 USDC per fetch
+> Pay-to: 0x4e14B249D9A4c9c9352D780eCEB508A8eB7a7700
+> Facilitator: https://x402.org/facilitator
+
+Agents that send a valid X-PAYMENT header receive full content instantly.
+Unpaid automated requests receive HTTP 402 with machine-readable payment requirements.
+Human visitors browse free.

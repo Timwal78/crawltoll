@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "name": "scriptmasterlabs.com",
+  "description": "x402-gated content access for AI agents on scriptmasterlabs.com",
+  "payment": {
+    "protocol": "x402",
+    "version": 1,
+    "scheme": "exact",
+    "network": "base",
+    "asset": "USDC",
+    "price_per_fetch": "0.005",
+    "pay_to": "0x4e14B249D9A4c9c9352D780eCEB508A8eB7a7700",
+    "facilitator": "https://x402.org/facilitator"
+  },
+  "endpoints": [
+    {
+      "path": "/*",
+      "method": "GET",
+      "price_usdc": "0.005",
+      "description": "Any content page — pay per fetch"
+    }
+  ],
+  "contact": "admin@scriptmasterlabs.com"
+}

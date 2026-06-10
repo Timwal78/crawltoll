@@ -1,0 +1,43 @@
+{
+  "name": "crawltoll",
+  "version": "1.0.0",
+  "description": "Turn AI scraping into revenue. One-command x402 (HTTP-402) paywall: AI crawlers pay USDC per fetch, humans browse free.",
+  "main": "index.js",
+  "bin": {
+    "crawltoll": "bin/cli.js"
+  },
+  "scripts": {
+    "test": "node test/smoke.js"
+  },
+  "keywords": [
+    "x402",
+    "http-402",
+    "micropayments",
+    "ai-agents",
+    "agentic-web",
+    "usdc",
+    "base",
+    "crawler",
+    "paywall",
+    "llms-txt",
+    "agents-json",
+    "machine-payments",
+    "scraping",
+    "monetization"
+  ],
+  "author": "Script Master Labs LLC (https://www.scriptmasterlabs.com)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Timwal78/crawltoll.git"
+  },
+  "homepage": "https://www.scriptmasterlabs.com",
+  "files": [
+    "index.js",
+    "bin/",
+    "README.md"
+  ]
+}

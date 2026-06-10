@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: crawltoll
+    runtime: node
+    plan: starter
+    buildCommand: "npm install --omit=dev || true"
+    startCommand: "node server.js"
+    envVars:
+      - key: CRAWLTOLL_PAYTO
+        value: "0x4e14B249D9A4c9c9352D780eCEB508A8eB7a7700"
+      - key: CRAWLTOLL_NETWORK
+        value: "base"
+      - key: CRAWLTOLL_PRICE
+        value: "0.005"
