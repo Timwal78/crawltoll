@@ -35,6 +35,11 @@ function serveStatic(req, res) {
     res.setHeader("Content-Type", "application/json");
     return res.end(JSON.stringify(crawltoll.getStats(process.env.CRAWLTOLL_LEDGER || "/tmp/crawltoll-ledger.jsonl"), null, 2));
   }
+  // AI visitor intelligence — who's been crawling
+  if (p === "/crawltoll/visitors") {
+    res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify(crawltoll.getVisitors(process.env.CRAWLTOLL_LEDGER || "/tmp/crawltoll-ledger.jsonl"), null, 2));
+  }
   const file = path.join(PUBLIC_DIR, path.normalize(p).replace(/^(\.\.[\/\\])+/, ""));
   if (fs.existsSync(file) && fs.statSync(file).isFile()) {
     res.setHeader("Content-Type", MIME[path.extname(file)] || "application/octet-stream");

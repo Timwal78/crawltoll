@@ -254,3 +254,60 @@ module.exports.buildPaymentRequirements = buildPaymentRequirements;
 
 // AP2 mandate verification (Google Agent Payments Protocol)
 try { module.exports.ap2 = require("./ap2.js"); } catch (_) {}
+
+// ---------------------------------------------------------------------------
+// AI Visitor intelligence — who's been crawling? (parses logged user-agents)
+// ---------------------------------------------------------------------------
+const KNOWN_AI_BOTS = [
+  ["GPTBot", "OpenAI"], ["OAI-SearchBot", "OpenAI"], ["ChatGPT-User", "OpenAI"],
+  ["ClaudeBot", "Anthropic"], ["Claude-Web", "Anthropic"], ["anthropic-ai", "Anthropic"],
+  ["PerplexityBot", "Perplexity"], ["Perplexity-User", "Perplexity"],
+  ["Google-Extended", "Google"], ["GoogleOther", "Google"],
+  ["Bytespider", "ByteDance"], ["Amazonbot", "Amazon"], ["Applebot", "Apple"],
+  ["CCBot", "CommonCrawl"], ["Meta-ExternalAgent", "Meta"], ["facebookexternalhit", "Meta"],
+  ["cohere-ai", "Cohere"], ["YouBot", "You.com"], ["Diffbot", "Diffbot"],
+  ["DuckAssistBot", "DuckDuckGo"], ["MistralAI", "Mistral"],
+];
+
+function classifyUA(ua) {
+  const s = (ua || "").toString();
+  for (const [pat, org] of KNOWN_AI_BOTS) {
+    if (s.toLowerCase().includes(pat.toLowerCase())) return { bot: pat, org };
+  }
+  return null;
+}
+
+function getVisitors(ledgerFile, limit = 50) {
+  const file = ledgerFile || path.join(process.cwd(), "crawltoll-ledger.jsonl");
+  if (!fs.existsSync(file)) {
+    return { totalAiHits: 0, uniqueBots: 0, byBot: {}, byOrg: {}, recent: [], note: "No ledger yet — no visitors logged." };
+  }
+  const lines = fs.readFileSync(file, "utf8").trim().split("\n").filter(Boolean);
+  const byBot = {}, byOrg = {}, recent = [];
+  let totalAiHits = 0;
+  for (const line of lines) {
+    try {
+      const e = JSON.parse(line);
+      if (!e.ua) continue;
+      const hit = classifyUA(e.ua);
+      if (!hit) continue;
+      totalAiHits++;
+      byBot[hit.bot] = (byBot[hit.bot] || 0) + 1;
+      byOrg[hit.org] = (byOrg[hit.org] || 0) + 1;
+      recent.push({ ts: new Date(e.t).toISOString(), bot: hit.bot, org: hit.org, path: e.path, event: e.event });
+    } catch (_) {}
+  }
+  return {
+    totalAiHits,
+    uniqueBots: Object.keys(byBot).length,
+    byBot,
+    byOrg,
+    recent: recent.slice(-limit).reverse(),
+    note: totalAiHits === 0
+      ? "Infrastructure live and AI-welcoming. No identified AI crawlers have hit the paid feeds yet — expected this early in the agentic economy."
+      : totalAiHits + " AI crawler hit(s) across " + Object.keys(byOrg).length + " organization(s).",
+  };
+}
+
+module.exports.getVisitors = getVisitors;
+module.exports.classifyUA = classifyUA;
