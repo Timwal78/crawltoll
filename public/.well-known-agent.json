@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "name": "CRAWLTOLL Signal Feeds",
+  "description": "x402-gated, AP2-native trading-signal and data feeds. AI agents pay USDC per fetch for squeeze hits, graded options picks, and full market scans.",
+  "provider": { "organization": "Script Master Labs LLC", "url": "https://www.scriptmasterlabs.com" },
+  "url": "https://crawltoll.onrender.com",
+  "version": "1.1.0",
+  "capabilities": { "payments": true, "streaming": false },
+  "payment": {
+    "protocols": ["x402", "AP2"],
+    "ap2_mandate_header": "X-AP2-MANDATE",
+    "settlement": "USDC",
+    "networks": ["base", "polygon", "solana"],
+    "facilitator": "https://x402.org/facilitator"
+  },
+  "skills": [
+    { "id": "feed-squeeze", "name": "Squeeze Signals", "price_usdc": "0.005", "path": "/feed/squeeze" },
+    { "id": "feed-options", "name": "Graded Options Picks", "price_usdc": "0.01", "path": "/feed/options" },
+    { "id": "feed-universe", "name": "Market Scan Snapshot", "price_usdc": "0.02", "path": "/feed/universe" },
+    { "id": "feed-firehose", "name": "All Signals", "price_usdc": "0.05", "path": "/feed/firehose" }
+  ]
+}
