@@ -38,5 +38,26 @@
       "description": "All signals, single pull"
     }
   ],
-  "contact": "admin@scriptmasterlabs.com"
+  "contact": "admin@scriptmasterlabs.com",
+  "ap2": {
+    "supported": true,
+    "mode": "optional",
+    "mandate_header": "X-AP2-MANDATE",
+    "spec": "https://ap2-protocol.org/specification/",
+    "settlement_rail": "x402",
+    "note": "CRAWLTOLL verifies AP2 Intent/Cart/Payment mandates (W3C Verifiable Credentials) before honoring agent payments. Settlement via x402 USDC on Base."
+  },
+  "conversational_attributes": {
+    "offering_type": "data_feed",
+    "pricing_model": "pay_per_fetch",
+    "currency": "USDC",
+    "refundable": false,
+    "latency": "real_time",
+    "categories": [
+      "trading_signals",
+      "market_data",
+      "options_flow",
+      "ai_crawler_access"
+    ]
+  }
 }

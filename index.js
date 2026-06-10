@@ -7,6 +7,8 @@
 
 const fs = require("fs");
 const path = require("path");
+let ap2;
+try { ap2 = require("./ap2.js"); } catch (_) { ap2 = null; }
 
 // ---------------------------------------------------------------------------
 // Defaults
@@ -20,6 +22,12 @@ const DEFAULTS = {
   freePaths: ["/robots.txt", "/llms.txt", "/agents.json", "/.well-known", "/favicon.ico", "/crawltoll"],
   chargeHumans: false,
   maxTimeoutSeconds: 60,
+  // AP2 (Google Agent Payments Protocol):
+  //   "off"      — ignore mandates (default; pure x402)
+  //   "optional" — if an X-AP2-MANDATE is present, verify it; reject only if invalid
+  //   "required" — agents MUST present a valid AP2 mandate to pay
+  ap2Mode: "optional",
+  ap2TrustedIssuers: {},                 // { "did:...#key": publicKeyPem }
 };
 
 const USDC = {
@@ -133,6 +141,38 @@ function crawltoll(userConfig = {}) {
       const requirements = buildPaymentRequirements(cfg, req);
       const paymentHeader = req.headers["x-payment"];
 
+      // 2.5 AP2 mandate gate (Google Agent Payments Protocol)
+      // Verify the agent was actually authorized for this resource + amount.
+      if (ap2 && cfg.ap2Mode && cfg.ap2Mode !== "off") {
+        const mandate = ap2.mandateFromRequest(req);
+        if (mandate) {
+          const verdict = ap2.verifyMandate(mandate, {
+            resource: requirements.resource,
+            amountAtomicUSDC: parseInt(requirements.maxAmountRequired, 10),
+            payTo: cfg.payTo,
+            trustedIssuers: cfg.ap2TrustedIssuers || {},
+          });
+          if (!verdict.valid) {
+            logRevenue(cfg, { t: Date.now(), event: "ap2_mandate_invalid", path: urlPath, reason: verdict.reason });
+            return res.status(402).json({
+              x402Version: 1,
+              error: "AP2 mandate invalid: " + verdict.reason,
+              ap2: { required: cfg.ap2Mode === "required", checks: verdict.checks },
+              accepts: [requirements],
+            });
+          }
+          res.set("X-AP2-VERIFIED", "true");
+        } else if (cfg.ap2Mode === "required") {
+          logRevenue(cfg, { t: Date.now(), event: "ap2_mandate_missing", path: urlPath });
+          return res.status(402).json({
+            x402Version: 1,
+            error: "AP2 mandate required. Send X-AP2-MANDATE header (base64 VC bundle).",
+            ap2: { required: true, spec: "https://ap2-protocol.org/specification/" },
+            accepts: [requirements],
+          });
+        }
+      }
+
       // 3. No payment yet → issue the 402 challenge
       if (!paymentHeader) {
         logRevenue(cfg, { t: Date.now(), event: "challenge", path: urlPath, ua: req.headers["user-agent"] || "" });
@@ -211,3 +251,6 @@ module.exports.crawltoll = crawltoll;
 module.exports.isAIAgent = isAIAgent;
 module.exports.getStats = getStats;
 module.exports.buildPaymentRequirements = buildPaymentRequirements;
+
+// AP2 mandate verification (Google Agent Payments Protocol)
+try { module.exports.ap2 = require("./ap2.js"); } catch (_) {}
