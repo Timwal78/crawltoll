@@ -4,6 +4,8 @@
 
 By [Script Master Labs LLC](https://www.scriptmasterlabs.com) — built for the agentic web.
 
+**AP2-compatible:** CRAWLTOLL settles via x402 — the stablecoin rail of Google's Agent Payments Protocol (A2A x402 extension, built with Coinbase). Coinbase's own AP2 launch cites *per-crawl fees* and *paying for data crawls* as flagship x402 use cases — that's exactly what CRAWLTOLL does.
+
 ## How it works
 1. Your site gets a 3-line middleware
 2. Bot/agent traffic hits HTTP 402 with machine-readable x402 payment terms (USDC on Base)

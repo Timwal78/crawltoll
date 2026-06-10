@@ -1,6 +1,6 @@
 {
   "name": "crawltoll",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Turn AI scraping into revenue. One-command x402 (HTTP-402) paywall: AI crawlers pay USDC per fetch, humans browse free.",
   "main": "index.js",
   "bin": {
@@ -23,7 +23,12 @@
     "agents-json",
     "machine-payments",
     "scraping",
-    "monetization"
+    "monetization",
+    "ap2",
+    "agent-payments-protocol",
+    "a2a",
+    "pay-per-crawl",
+    "coinbase"
   ],
   "author": "Script Master Labs LLC (https://www.scriptmasterlabs.com)",
   "license": "MIT",
