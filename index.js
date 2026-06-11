@@ -17,7 +17,17 @@ const DEFAULTS = {
   payTo: "0x4e14B249D9A4c9c9352D780eCEB508A8eB7a7700",
   network: "base",                       // "base" | "base-sepolia"
   priceUSDC: "0.005",                    // price per fetch, in USDC
-  facilitatorUrl: "https://x402.org/facilitator",
+  facilitatorUrl: process.env.X402_FACILITATOR_URL || "https://x402.org/facilitator",
+  // x402 Bazaar discovery (Coinbase CDP): set X402_FACILITATOR_URL to the CDP
+  // facilitator and bazaarDiscoverable:true to be auto-indexed in the CDP Bazaar
+  // the first time a payment settles through CDP. Listing metadata below.
+  bazaarDiscoverable: (process.env.X402_BAZAAR_DISCOVERABLE || "true") === "true",
+  bazaarListing: {
+    name: "CRAWLTOLL — AI Crawler Paywall Feeds",
+    description: "Pay-per-fetch trading signals and data: squeeze hits, graded options picks, market scans. AP2-native (verifies Google Agent Payments Protocol mandates). By Script Master Labs.",
+    provider: "Script Master Labs LLC",
+    category: "data-feeds",
+  },
   description: "Pay-per-fetch access to fresh content via CRAWLTOLL",
   freePaths: ["/robots.txt", "/llms.txt", "/agents.json", "/.well-known", "/favicon.ico", "/crawltoll"],
   chargeHumans: false,
@@ -74,18 +84,30 @@ function toAtomicUSDC(amountStr) {
 function buildPaymentRequirements(cfg, req) {
   const token = USDC[cfg.network] || USDC["base"];
   const resource = `${req.protocol || "https"}://${req.headers.host || cfg.host || "example.com"}${req.originalUrl || req.url}`;
-  return {
+  const reqs = {
     scheme: "exact",
     network: cfg.network,
     maxAmountRequired: toAtomicUSDC(cfg.priceUSDC),
     resource,
-    description: cfg.description,
+    description: (cfg.bazaarListing && cfg.bazaarListing.description) || cfg.description,
     mimeType: "application/json",
     payTo: cfg.payTo,
     maxTimeoutSeconds: cfg.maxTimeoutSeconds,
     asset: token.asset,
     extra: { name: token.name, version: "2" },
   };
+  // x402 Bazaar discovery: when discoverable, advertise rich listing metadata so
+  // the CDP facilitator indexes name/description/category for agent search.
+  if (cfg.bazaarDiscoverable) {
+    reqs.discoverable = true;
+    reqs.outputSchema = {
+      name: (cfg.bazaarListing && cfg.bazaarListing.name) || "CRAWLTOLL feed",
+      provider: (cfg.bazaarListing && cfg.bazaarListing.provider) || "Script Master Labs LLC",
+      category: (cfg.bazaarListing && cfg.bazaarListing.category) || "data-feeds",
+      ap2: true,
+    };
+  }
+  return reqs;
 }
 
 // ---------------------------------------------------------------------------
