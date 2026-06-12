@@ -29,7 +29,7 @@ const DEFAULTS = {
     category: "data-feeds",
   },
   description: "Pay-per-fetch access to fresh content via CRAWLTOLL",
-  freePaths: ["/robots.txt", "/llms.txt", "/agents.json", "/.well-known", "/favicon.ico", "/crawltoll"],
+  freePaths: ["/robots.txt", "/llms.txt", "/agents.json", "/sitemap.xml", "/.well-known", "/favicon.ico", "/crawltoll"],
   chargeHumans: false,
   maxTimeoutSeconds: 60,
   // AP2 (Google Agent Payments Protocol):
