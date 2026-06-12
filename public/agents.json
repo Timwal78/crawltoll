@@ -1,7 +1,11 @@
 {
   "schema_version": "1.0",
-  "name": "scriptmasterlabs.com",
-  "description": "x402-gated content access for AI agents on scriptmasterlabs.com",
+  "name": "CRAWLTOLL — by ScriptMasterLabs",
+  "url": "https://crawltoll.onrender.com",
+  "description": "x402-gated trading signal feeds. AI agents pay USDC per fetch on Base; humans browse free except on premium feed endpoints.",
+  "ecosystem": "ScriptMasterLabs",
+  "ecosystem_url": "https://www.scriptmasterlabs.com",
+  "architecture_map": "https://github.com/Timwal78/SqueezeOS/blob/main/docs/architecture/INDEX.md",
   "payment": {
     "protocol": "x402",
     "version": 1,

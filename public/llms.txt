@@ -11,3 +11,8 @@
 Agents that send a valid X-PAYMENT header receive full content instantly.
 Unpaid automated requests receive HTTP 402 with machine-readable payment requirements.
 Human visitors browse free.
+
+## Resources
+- GitHub: https://github.com/Timwal78/crawltoll
+- Ecosystem: https://www.scriptmasterlabs.com
+- Architecture Map: https://github.com/Timwal78/SqueezeOS/blob/main/docs/architecture/INDEX.md

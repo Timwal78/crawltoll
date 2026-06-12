@@ -1,0 +1,18 @@
+# CRAWLTOLL — agentic web optimized (x402 toll on premium routes)
+User-agent: *
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: anthropic-ai
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://crawltoll.onrender.com/sitemap.xml
