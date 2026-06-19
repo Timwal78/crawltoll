@@ -4,6 +4,10 @@
  * Thin Node.js implementation using only built-in `crypto` (Node ≥ 18).
  * Issues W3C VC 2.0 InteractionCredentials signed with Ed25519 (eddsa-vapl-2024).
  * No npm deps added.
+ *
+ * Security note: the soul file contains a private key. Set VAPL_SOUL_FILE to a
+ * path on a persistent volume with file mode 0600. Never commit the soul file.
+ * Default path is /tmp (ephemeral) — acceptable for development only.
  */
 
 "use strict";
@@ -15,9 +19,12 @@ const path = require("path");
 const B58_ALPHA = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
 function b58Encode(buf) {
+  if (!buf || buf.length === 0) return "1";
   let leading = 0;
   for (const b of buf) { if (b !== 0) break; leading++; }
-  let n = BigInt("0x" + buf.toString("hex") || "0");
+  const hexStr = buf.toString("hex");
+  if (!hexStr) return "1".repeat(leading);
+  let n = BigInt("0x" + hexStr);
   const chars = [];
   while (n > 0n) { chars.push(B58_ALPHA[Number(n % 58n)]); n /= 58n; }
   return "1".repeat(leading) + chars.reverse().join("");
@@ -72,20 +79,33 @@ let _soul = null;
 function getSoul() {
   if (_soul) return _soul;
   const soulPath = process.env.VAPL_SOUL_FILE || "/tmp/vapl_soul_crawltoll.json";
+
+  if (soulPath.startsWith("/tmp")) {
+    console.warn("[VAPL] WARNING: Soul file is in /tmp (ephemeral). Set VAPL_SOUL_FILE to a persistent volume path in production.");
+  }
+
   if (fs.existsSync(soulPath)) {
     try {
-      _soul = soulFromDict(JSON.parse(fs.readFileSync(soulPath, "utf8")));
+      const raw = JSON.parse(fs.readFileSync(soulPath, "utf8"));
+      // Validate the loaded soul has required fields before trusting it
+      if (!raw.did || !raw.privateKeyBase64url) {
+        throw new Error("Soul file is missing required fields (did, privateKeyBase64url)");
+      }
+      _soul = soulFromDict(raw);
       console.log(`[VAPL] Soul loaded: ${_soul.did}`);
       return _soul;
     } catch (e) {
       console.warn("[VAPL] Failed to load soul:", e.message);
+      // Fall through to generate a new soul
     }
   }
+
   const raw = generateSoul();
   try {
     fs.mkdirSync(path.dirname(soulPath), { recursive: true });
-    fs.writeFileSync(soulPath, JSON.stringify(raw, null, 2));
+    fs.writeFileSync(soulPath, JSON.stringify(raw, null, 2), { mode: 0o600 });
     console.log(`[VAPL] New soul saved: ${raw.did}`);
+    console.log(`[VAPL] Soul file permissions set to 0600. Path: ${soulPath}`);
   } catch (e) {
     console.warn("[VAPL] Could not persist soul:", e.message);
   }

@@ -126,5 +126,38 @@ const fakeReq = { headers: { "x-ap2-mandate": Buffer.from(JSON.stringify({ inten
 const parsed = mandateFromRequest(fakeReq);
 check("Mandate parsed from X-AP2-MANDATE header", parsed && parsed.intent);
 
+// Prototype pollution guard — __proto__ as a JSON key is an own-property in V8 (safe),
+// but constructor.prototype injection must be blocked.
+const constructorPayload = Buffer.from(JSON.stringify({
+  constructor: { prototype: { admin: true } }, intent
+})).toString("base64");
+const poisoned = mandateFromRequest({ headers: { "x-ap2-mandate": constructorPayload } });
+check("constructor.prototype injection in mandate rejected (returns null)", poisoned === null);
+check("Object.prototype.admin not set after injection attempt", ({}).admin === undefined);
+
+// Header size limit — very large header must be rejected
+const hugeReq = { headers: { "x-ap2-mandate": "A".repeat(70000) } };
+check("Oversized mandate header rejected (returns null)", mandateFromRequest(hugeReq) === null);
+
+// Untrusted issuer — key not in trusted set must fail signature check
+r = verifyMandate({ intent }, {
+  resource: "https://crawltoll.onrender.com/feed/squeeze",
+  amountAtomicUSDC: 5000,
+  payTo: "0x4e14B249D9A4c9c9352D780eCEB508A8eB7a7700",
+  trustedIssuers: { "did:example:other#key-99": pubPem }, // different key ID
+});
+check("Mandate with unknown key ID rejected when trustedIssuers populated", !r.valid);
+
+// No trusted issuers — signature check skipped, non-sig checks still run
+r = verifyMandate({ intent }, {
+  resource: "https://crawltoll.onrender.com/feed/squeeze",
+  amountAtomicUSDC: 5000,
+  payTo: "0x4e14B249D9A4c9c9352D780eCEB508A8eB7a7700",
+  trustedIssuers: {},
+});
+check("Mandate valid with no trustedIssuers (sig check skipped)", r.valid);
+check("  → intent_signature_skipped flagged", r.checks.intent_signature_skipped === true);
+check("  → intent_signature not set (not blocking)", r.checks.intent_signature === undefined);
+
 console.log("\n" + pass + " passed, " + fail + " failed");
 process.exit(fail ? 1 : 0);

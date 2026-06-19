@@ -7,7 +7,8 @@
     "crawltoll": "bin/cli.js"
   },
   "scripts": {
-    "test": "node test/smoke.js"
+    "test": "node test/smoke.js && node test/ap2.test.js",
+    "lint": "node --check index.js ap2.js vapl.js feed.js server.js bin/cli.js"
   },
   "keywords": [
     "gemini",

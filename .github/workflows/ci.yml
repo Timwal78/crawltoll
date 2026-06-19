@@ -1,0 +1,19 @@
+name: ci
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+      - run: npm install --ignore-scripts
+      - run: npm audit --audit-level=high || true
+      - run: npm run lint || true
+      - name: Unit tests (AP2 mandate verification)
+        run: node test/ap2.test.js
+      - name: Smoke tests (middleware integration)
+        run: node test/smoke.js
