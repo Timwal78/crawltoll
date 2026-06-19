@@ -7,6 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const crawltoll = require("./index.js");
 const { serveFeed, FEED_PRICING } = require("./feed.js");
+const vapl = require("./vapl.js");
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = process.env.PUBLIC_DIR || path.join(__dirname, "public");
@@ -40,6 +41,11 @@ function serveStatic(req, res) {
     res.setHeader("Content-Type", "application/json");
     return res.end(JSON.stringify(crawltoll.getVisitors(process.env.CRAWLTOLL_LEDGER || "/tmp/crawltoll-ledger.jsonl"), null, 2));
   }
+  if (p === "/.well-known/vapl.json") {
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    return res.end(JSON.stringify(vapl.buildManifest(), null, 2));
+  }
   const file = path.join(PUBLIC_DIR, path.normalize(p).replace(/^(\.\.[\/\\])+/, ""));
   if (fs.existsSync(file) && fs.statSync(file).isFile()) {
     res.setHeader("Content-Type", MIME[path.extname(file)] || "application/octet-stream");
@@ -67,6 +73,17 @@ http.createServer((req, res) => {
         const data = await serveFeed(req.path);
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Cache-Control", "no-store");
+        // Emit VAPL VC for successful paid data feed access
+        try {
+          const soul = vapl.getSoul();
+          const wallet = req.headers["x-agent-wallet"] || "";
+          const vc = vapl.issueInteractionVc(soul, vapl.agentDid(wallet), "CrawltollFetch",
+            `https://crawltoll.onrender.com${req.path}`, "success");
+          const vcB64 = Buffer.from(JSON.stringify(vc)).toString("base64url");
+          res.setHeader("X-VAPL-VC", vcB64);
+          res.setHeader("X-VAPL-Issuer", soul.did);
+          res.setHeader("X-VAPL-VC-ID", vc.id);
+        } catch (_) {}
         res.end(JSON.stringify(data));
       } catch (e) {
         res.statusCode = 502; res.end(JSON.stringify({ error: "feed_upstream_error" }));
@@ -74,6 +91,24 @@ http.createServer((req, res) => {
     });
   }
 
-  // everything else: page toll + static
-  mw(req, res, () => serveStatic(req, res));
+  // everything else: page toll + static — emit VAPL VC on successful toll pass
+  mw(req, res, () => {
+    const origEnd = res.end.bind(res);
+    res.end = function(chunk) {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        try {
+          const soul = vapl.getSoul();
+          const wallet = req.headers["x-agent-wallet"] || "";
+          const vc = vapl.issueInteractionVc(soul, vapl.agentDid(wallet), "CrawltollFetch",
+            `https://crawltoll.onrender.com${req.path}`, "success");
+          const vcB64 = Buffer.from(JSON.stringify(vc)).toString("base64url");
+          res.setHeader("X-VAPL-VC", vcB64);
+          res.setHeader("X-VAPL-Issuer", soul.did);
+          res.setHeader("X-VAPL-VC-ID", vc.id);
+        } catch (_) {}
+      }
+      return origEnd(chunk);
+    };
+    serveStatic(req, res);
+  });
 }).listen(PORT, () => console.log(`CRAWLTOLL toll booth + signal feed live on :${PORT}`));
