@@ -8,6 +8,7 @@ const path = require("path");
 const crawltoll = require("./index.js");
 const { serveFeed, FEED_PRICING } = require("./feed.js");
 const vapl = require("./vapl.js");
+const clearinghouse = require("./clearinghouse.js");
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.resolve(process.env.PUBLIC_DIR || path.join(__dirname, "public"));
@@ -109,6 +110,47 @@ function serveStatic(req, res) {
     return res.end(JSON.stringify(crawltoll.getVisitors(LEDGER), null, 2));
   }
 
+  // ── CLEARINGHOUSE ROUTES ──────────────────────────────────────────────────
+
+  // POST /clearinghouse/register — publisher registration (JSON body via GET params for simplicity)
+  // Full POST body parsing done inline; this is a minimal HTTP server with no body-parser dep.
+  if (p === "/clearinghouse/stats") {
+    // Public global stats — how much has been paid to publishers by AI company
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Cache-Control", "no-store");
+    return res.end(JSON.stringify(clearinghouse.getGlobalStats(), null, 2));
+  }
+
+  if (p === "/clearinghouse/queue") {
+    // Admin: settlement queue — wallets that need RLUSD transfers
+    if (!isAdminAuthorized(req)) {
+      res.statusCode = 401;
+      res.setHeader("WWW-Authenticate", 'Bearer realm="crawltoll-admin"');
+      return res.end(JSON.stringify({ error: "Unauthorized", code: "ADMIN_AUTH_REQUIRED" }));
+    }
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Cache-Control", "no-store");
+    const minThreshold = parseFloat(new URL(req.url, "http://x").searchParams.get("min") || "0.10");
+    return res.end(JSON.stringify(clearinghouse.getSettlementQueue(minThreshold), null, 2));
+  }
+
+  if (p === "/clearinghouse/dashboard") {
+    // Publisher dashboard — authenticated by X-Publisher-Token header
+    const token = req.headers["x-publisher-token"] || "";
+    if (!token) {
+      res.statusCode = 401;
+      return res.end(JSON.stringify({ error: "X-Publisher-Token header required", code: "TOKEN_REQUIRED" }));
+    }
+    const pub = clearinghouse.getPublisherByToken(token);
+    if (!pub) {
+      res.statusCode = 401;
+      return res.end(JSON.stringify({ error: "Invalid publisher token", code: "INVALID_TOKEN" }));
+    }
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Cache-Control", "no-store");
+    return res.end(JSON.stringify(clearinghouse.getPublisherDashboard(pub.publisherId), null, 2));
+  }
+
   if (p === "/.well-known/vapl.json") {
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -158,10 +200,60 @@ http.createServer((req, res) => {
       return res.end();
     }
 
-    // Only allow GET and HEAD; reject other methods at the server level
+    // POST /clearinghouse/register — publisher onboarding (must come before the GET-only guard)
+    if (req.method === "POST" && req.path === "/clearinghouse/register") {
+      let body = "";
+      req.on("data", (d) => { body += d; if (body.length > 8192) req.destroy(); });
+      req.on("end", () => {
+        try {
+          const data = JSON.parse(body);
+          const result = clearinghouse.registerPublisher(data);
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.statusCode = 201;
+          res.end(JSON.stringify({
+            ...result,
+            message: "Publisher registered. Store your apiToken — it is shown only once.",
+            revenueShare: "70% of all AI crawler fees are settled to your XRPL wallet in RLUSD.",
+          }));
+        } catch (err) {
+          res.statusCode = 400;
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.end(JSON.stringify({ error: err.message, code: "REGISTRATION_FAILED" }));
+        }
+      });
+      req.on("error", () => { res.statusCode = 400; res.end(); });
+      return;
+    }
+
+    // POST /clearinghouse/settle — admin: mark a publisher's balance as settled after XRPL tx
+    if (req.method === "POST" && req.path === "/clearinghouse/settle") {
+      if (!isAdminAuthorized(req)) {
+        res.statusCode = 401;
+        res.setHeader("WWW-Authenticate", 'Bearer realm="crawltoll-admin"');
+        return res.end(JSON.stringify({ error: "Unauthorized", code: "ADMIN_AUTH_REQUIRED" }));
+      }
+      let body = "";
+      req.on("data", (d) => { body += d; if (body.length > 4096) req.destroy(); });
+      req.on("end", () => {
+        try {
+          const { publisherId, amountRLUSD, txHash } = JSON.parse(body);
+          clearinghouse.markSettled(publisherId, parseFloat(amountRLUSD), txHash);
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.end(JSON.stringify({ ok: true, publisherId, amountRLUSD, txHash }));
+        } catch (err) {
+          res.statusCode = 400;
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.end(JSON.stringify({ error: err.message, code: "SETTLE_FAILED" }));
+        }
+      });
+      req.on("error", () => { res.statusCode = 400; res.end(); });
+      return;
+    }
+
+    // Only allow GET and HEAD for all other routes
     if (req.method !== "GET" && req.method !== "HEAD") {
       res.statusCode = 405;
-      res.setHeader("Allow", "GET, HEAD, OPTIONS");
+      res.setHeader("Allow", "GET, HEAD, OPTIONS, POST");
       return res.end(JSON.stringify({ error: "Method not allowed", code: "METHOD_NOT_ALLOWED" }));
     }
 
@@ -198,6 +290,21 @@ http.createServer((req, res) => {
 
     // Everything else: page toll + static
     mw(req, res, () => {
+      // Record clearinghouse revenue split when a paid crawl succeeds
+      try {
+        const priceUSDC = parseFloat(process.env.CRAWLTOLL_PRICE || "0.005");
+        const ua = req.headers["user-agent"] || "";
+        if (clearinghouse.detectAICompany(ua)) {
+          const host = (req.headers["host"] || "").split(":")[0];
+          clearinghouse.recordCrawl({
+            domain: host,
+            url: `https://${host}${req.path}`,
+            userAgent: ua,
+            amountUSDC: priceUSDC,
+          });
+        }
+      } catch (_) {}
+
       const origEnd = res.end.bind(res);
       res.end = function(chunk) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
