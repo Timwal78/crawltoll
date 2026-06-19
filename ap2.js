@@ -18,6 +18,8 @@
  * (c) Script Master Labs LLC — BEAST MODE
  */
 
+"use strict";
+
 const crypto = require("crypto");
 
 // ---------------------------------------------------------------------------
@@ -40,6 +42,9 @@ function jcsCanonicalize(value) {
 // ---------------------------------------------------------------------------
 function verifyVcSignature(vc, publicKeyPem) {
   try {
+    if (typeof publicKeyPem !== "string" || !publicKeyPem.includes("PUBLIC KEY")) {
+      return { ok: false, reason: "invalid_public_key_format" };
+    }
     const proof = vc.proof;
     if (!proof || !proof.proofValue) return { ok: false, reason: "missing_proof" };
 
@@ -64,9 +69,9 @@ function verifyVcSignature(vc, publicKeyPem) {
 // ---------------------------------------------------------------------------
 function notExpired(vc) {
   const exp = vc.expirationDate || (vc.credentialSubject && vc.credentialSubject.ttl);
-  if (!exp) return true; // no expiry declared
+  if (!exp) return false; // no expiry declared → treat as expired for security
   const t = typeof exp === "number" ? exp * 1000 : Date.parse(exp);
-  return Number.isFinite(t) ? Date.now() < t : true;
+  return Number.isFinite(t) ? Date.now() < t : false;
 }
 
 function within(amountAtomicUSDC, intentMaxUSDC) {
@@ -79,6 +84,10 @@ function within(amountAtomicUSDC, intentMaxUSDC) {
 // Top-level: verify an AP2 mandate bundle against this request
 // mandate = { intent, cart, payment }  (each a VC) — any subset accepted
 // ctx = { resource, amountAtomicUSDC, payTo, trustedIssuers: {did|keyId: publicKeyPem} }
+//
+// Security note: if trustedIssuers is empty, signature verification is SKIPPED
+// for that VC — the mandate is treated as unsigned/untrusted and non-signature
+// checks still apply. Callers should populate trustedIssuers for production use.
 // ---------------------------------------------------------------------------
 function verifyMandate(mandate, ctx = {}) {
   const result = { ap2: true, valid: false, checks: {}, reason: null };
@@ -89,6 +98,7 @@ function verifyMandate(mandate, ctx = {}) {
 
   const { intent, cart, payment } = mandate;
   const trusted = ctx.trustedIssuers || {};
+  const hasTrustedIssuers = Object.keys(trusted).length > 0;
 
   // 1. Intent Mandate — scope, TTL, price ceiling
   if (intent) {
@@ -110,10 +120,20 @@ function verifyMandate(mandate, ctx = {}) {
       result.checks.merchant_allowed = true; // open intent
     }
 
-    // signature (if we have the issuer key)
+    // signature — when trustedIssuers is populated, the key must be present and valid
     const keyRef = intent.proof?.verificationMethod || intent.issuer;
-    if (trusted[keyRef]) {
-      result.checks.intent_signature = verifyVcSignature(intent, trusted[keyRef]).ok;
+    if (hasTrustedIssuers) {
+      // If we have trusted issuers, require the VC's key to be in the trusted set
+      if (trusted[keyRef]) {
+        result.checks.intent_signature = verifyVcSignature(intent, trusted[keyRef]).ok;
+      } else {
+        // Key not in trusted set — signature cannot be verified, fail closed
+        result.checks.intent_signature = false;
+      }
+    } else {
+      // No trusted issuers configured: signature check is advisory (not blocking)
+      // Mark as skipped so decision logic knows no cryptographic verification occurred
+      result.checks.intent_signature_skipped = true;
     }
   }
 
@@ -129,8 +149,14 @@ function verifyMandate(mandate, ctx = {}) {
       result.checks.cart_amount_matches = Math.abs(totalAtomic - (ctx.amountAtomicUSDC || 0)) <= 1;
     }
     const keyRef = cart.proof?.verificationMethod || cart.issuer;
-    if (trusted[keyRef]) {
-      result.checks.cart_signature = verifyVcSignature(cart, trusted[keyRef]).ok;
+    if (hasTrustedIssuers) {
+      if (trusted[keyRef]) {
+        result.checks.cart_signature = verifyVcSignature(cart, trusted[keyRef]).ok;
+      } else {
+        result.checks.cart_signature = false;
+      }
+    } else {
+      result.checks.cart_signature_skipped = true;
     }
   }
 
@@ -139,22 +165,52 @@ function verifyMandate(mandate, ctx = {}) {
     result.checks.payment_present = true;
     result.checks.payment_not_expired = notExpired(payment);
     const keyRef = payment.proof?.verificationMethod || payment.issuer;
-    if (trusted[keyRef]) {
-      result.checks.payment_signature = verifyVcSignature(payment, trusted[keyRef]).ok;
+    if (hasTrustedIssuers) {
+      if (trusted[keyRef]) {
+        result.checks.payment_signature = verifyVcSignature(payment, trusted[keyRef]).ok;
+      } else {
+        result.checks.payment_signature = false;
+      }
+    } else {
+      result.checks.payment_signature_skipped = true;
     }
   }
 
-  // Decision: every check that ran must be true; at least an Intent must be present
-  const ran = Object.values(result.checks);
+  // Decision: every non-skipped check that ran must be true;
+  // at least an Intent must be present.
+  // Checks ending in _skipped are informational and do not affect pass/fail.
+  const blockingChecks = Object.entries(result.checks)
+    .filter(([k]) => !k.endsWith("_skipped"));
+  const ran = blockingChecks.map(([, v]) => v);
   const allPass = ran.length > 0 && ran.every(Boolean);
   result.valid = Boolean(intent) && allPass;
   if (!result.valid) {
-    const failed = Object.entries(result.checks).filter(([, v]) => !v).map(([k]) => k);
+    const failed = blockingChecks.filter(([, v]) => !v).map(([k]) => k);
     result.reason = failed.length ? "failed:" + failed.join(",") : "no_intent_mandate";
   } else {
     result.reason = "mandate_valid";
   }
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// Safe JSON parser — prevents prototype pollution
+// ---------------------------------------------------------------------------
+function safeJsonParse(str) {
+  const obj = JSON.parse(str);
+  // Reject if __proto__, constructor, or prototype keys are present (prototype pollution guard)
+  const dangerous = ["__proto__", "constructor", "prototype"];
+  const checkObj = (o, depth = 0) => {
+    if (depth > 10 || typeof o !== "object" || o === null) return;
+    for (const key of Object.keys(o)) {
+      if (dangerous.includes(key)) {
+        throw new Error("Prototype pollution attempt detected in mandate JSON");
+      }
+      checkObj(o[key], depth + 1);
+    }
+  };
+  checkObj(obj);
+  return obj;
 }
 
 // ---------------------------------------------------------------------------
@@ -164,11 +220,13 @@ function verifyMandate(mandate, ctx = {}) {
 function mandateFromRequest(req) {
   const hdr = req.headers["x-ap2-mandate"] || req.headers["x-ap2-mandates"];
   if (!hdr) return null;
+  // Limit header size to prevent DoS via huge mandate
+  if (hdr.length > 65536) return null;
   try {
     const json = Buffer.from(hdr, "base64").toString("utf8");
-    return JSON.parse(json);
+    return safeJsonParse(json);
   } catch (_) {
-    try { return JSON.parse(hdr); } catch (__) { return null; }
+    try { return safeJsonParse(hdr); } catch (__) { return null; }
   }
 }
 
