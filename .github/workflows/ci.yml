@@ -10,7 +10,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci --ignore-scripts
+      - run: npm install --ignore-scripts
       - run: npm audit --audit-level=high || true
       - run: npm run lint || true
       - name: Unit tests (AP2 mandate verification)
