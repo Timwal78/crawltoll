@@ -1,5 +1,5 @@
 {
-  "product": "CRAWLTOLL™",
+  "product": "CRAWLTOLL\u2122",
   "tagline": "Turn AI scraping into revenue",
   "description": "CRAWLTOLL is a 3-line Express/Connect middleware that places an x402 paywall in front of AI crawlers. Bot and agent traffic hits HTTP 402 with machine-readable payment terms (USDC on Base). The agent sends an X-PAYMENT header; CRAWLTOLL verifies and settles via the x402 facilitator; content unlocks instantly. Human visitors always browse for free. AP2-native: verifies Google Agent Payments Protocol mandates before honoring payment.",
   "url": "https://scriptmasterlabs.com",
@@ -8,60 +8,168 @@
   "license": "MIT",
   "organization": "ScriptMasterLabs / Script Master Labs LLC (SDVOSB)",
   "github": "https://github.com/timwal78/crawltoll",
-
   "quick_start": {
     "init": "npx crawltoll init",
     "middleware": "const crawltoll = require('crawltoll'); app.use(crawltoll());",
     "standalone": "node server.js",
     "stats": "npx crawltoll stats"
   },
-
   "ap2_support": {
-    "description": "AP2-native — verifies Google Agent Payments Protocol (A2A x402 extension) mandates before honoring payment",
-    "mandate_types": ["Intent Mandate", "Cart Mandate", "Payment Mandate"],
+    "description": "AP2-native \u2014 verifies Google Agent Payments Protocol (A2A x402 extension) mandates before honoring payment",
+    "mandate_types": [
+      "Intent Mandate",
+      "Cart Mandate",
+      "Payment Mandate"
+    ],
     "signature_algorithm": "ECDSA P-256 / SHA-256 over JCS-canonicalized claims (RFC 8785)",
     "config": "ap2Mode: 'off' | 'optional' | 'required'"
   },
-
   "payment": {
     "protocol": "x402",
     "currency": "USDC",
     "network": "Base mainnet (default) or Base Sepolia (testing)",
     "default_price": "0.005 USDC per fetch",
-    "settlement": "via x402 facilitator — instant unlock after payment verification"
+    "settlement": "via x402 facilitator \u2014 instant unlock after payment verification"
   },
-
   "config_options": {
-    "payTo": "Your USDC wallet address on Base — required",
+    "payTo": "Your USDC wallet address on Base \u2014 required",
     "network": "base or base-sepolia",
     "priceUSDC": "Price per fetch (default: 0.005)",
     "freePaths": "Paths always open (default: discovery files like llms.txt, agents.json)",
-    "chargeHumans": "false (default) — flip to gate all traffic including humans",
+    "chargeHumans": "false (default) \u2014 flip to gate all traffic including humans",
     "ap2Mode": "off | optional | required",
     "ap2TrustedIssuers": "Map of DID key IDs to PEM public keys for AP2 mandate verification"
   },
-
   "detected_bots": [
-    "GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended",
-    "Bytespider", "CCBot", "Amazonbot", "Applebot-Extended", "Meta",
-    "curl", "python-requests", "axios", "headless browsers",
+    "GPTBot",
+    "ClaudeBot",
+    "PerplexityBot",
+    "Google-Extended",
+    "Bytespider",
+    "CCBot",
+    "Amazonbot",
+    "Applebot-Extended",
+    "Meta",
+    "curl",
+    "python-requests",
+    "axios",
+    "headless browsers",
     "any agent already speaking x402"
   ],
-
   "generated_files": {
     "crawltoll.config.json": "Main config (payTo, network, price, freePaths)",
-    "llms.txt": "LLM discovery file — describes paywall policy to AI models",
-    "agents.json": "Agent card — machine-readable pricing and payment terms",
+    "llms.txt": "LLM discovery file \u2014 describes paywall policy to AI models",
+    "agents.json": "Agent card \u2014 machine-readable pricing and payment terms",
     "robots.txt additions": "robots.txt entries pointing bots to payment info"
   },
-
   "revenue_tracking": "Built-in ledger. View with npx crawltoll stats.",
-
   "use_cases": [
     "Monetize AI scrapers crawling your documentation, API references, or premium content",
     "Gate news archives, research databases, or paywalled content from AI training data harvesters",
     "Compliance layer ensuring only AP2-authorized agents access sensitive resources"
   ],
-
-  "compatibility": "Express, Connect, and any Node.js HTTP framework supporting middleware"
+  "compatibility": "Express, Connect, and any Node.js HTTP framework supporting middleware",
+  "ecosystem": {
+    "organization": "ScriptMasterLabs",
+    "organization_url": "https://scriptmasterlabs.com",
+    "description": "ScriptMasterLabs builds x402 micropayment infrastructure, AI agent trust systems, and institutional market intelligence tools. All products interoperate via the x402 protocol for agent-native payments.",
+    "related_products": [
+      {
+        "name": "mcp-x402 Signal API",
+        "role": "Unified pay-per-call MCP gateway",
+        "description": "43+ MCP tools covering trading signals, web scraping, SEC data, XRPL whale copy-trading, memecoin launchpad, and agent infrastructure. Multi-chain x402: Base USDC, XRPL RLUSD, Solana USDC.",
+        "github": "https://github.com/timwal78/sml-x402-signal-api",
+        "tags": [
+          "mcp-server",
+          "x402",
+          "multi-chain",
+          "trading"
+        ]
+      },
+      {
+        "name": "Aetheris-MCP",
+        "role": "x402 web scraping MCP server",
+        "description": "SSE MCP server with JSDOM-sanitized web scraping behind an on-chain x402 USDC micropayment interceptor. Content returned as clean ad-free Markdown.",
+        "github": "https://github.com/timwal78/aetheris-mcp-render",
+        "tags": [
+          "mcp-server",
+          "scraping",
+          "x402",
+          "usdc"
+        ]
+      },
+      {
+        "name": "Ghost Layer",
+        "role": "Dual-chain XRPL+Base toll gateway",
+        "description": "Private routing engine with XRPL+Base micropayment toll, Xahau hooks intelligence, and URIToken minting. Go service, zero logging.",
+        "github": "https://github.com/timwal78/ghost-layer",
+        "url": "https://ghost-layer.onrender.com",
+        "tags": [
+          "gateway",
+          "xrpl",
+          "base",
+          "privacy"
+        ]
+      },
+      {
+        "name": "SqueezeOS",
+        "role": "Institutional AI trading intelligence MCP server",
+        "description": "33 MCP tools \u2014 short-squeeze detection, options flow, IWM 0DTE scoring, council verdicts, peer signal marketplace. Pay-per-signal in RLUSD on XRP Ledger via x402.",
+        "github": "https://github.com/timwal78/squeezeos",
+        "url": "https://squeezeos-api.onrender.com",
+        "tags": [
+          "mcp-server",
+          "trading",
+          "x402",
+          "rlusd"
+        ]
+      },
+      {
+        "name": "Aetheris Client SDK",
+        "role": "TypeScript x402 payment SDK for Aetheris-MCP",
+        "description": "Official npm SDK that auto-intercepts HTTP 402 challenges and settles USDC payments on Base \u2014 no manual payment handling needed.",
+        "github": "https://github.com/timwal78/aetheris-client-sdk",
+        "tags": [
+          "sdk",
+          "typescript",
+          "x402",
+          "usdc"
+        ]
+      },
+      {
+        "name": "AGO Orchestrator",
+        "role": "Agent orchestration infrastructure",
+        "description": "Orchestration layer for ScriptMasterLabs autonomous agent workflows.",
+        "github": "https://github.com/timwal78/ago-orchestrator",
+        "tags": [
+          "orchestration",
+          "agents"
+        ]
+      },
+      {
+        "name": "ZeroQuery Protocol",
+        "role": "Privacy-preserving intent ranking with ZK proofs",
+        "description": "SDK + Anchor program for ranking user intents without leaking raw queries. Groth16 ZK proofs (Poseidon hash) + pay-as-you-go SOL SaaS tiers.",
+        "github": "https://github.com/timwal78/zeroquery-protocol",
+        "tags": [
+          "zk-proofs",
+          "solana",
+          "privacy",
+          "sdk"
+        ]
+      },
+      {
+        "name": "Printing Press Library",
+        "role": "Published catalog of generated Go CLIs and MCP servers",
+        "description": "Registry of type-safe Go CLIs and MCP servers produced by CLI Printing Press. Install any CLI via npx @mvanhorn/printing-press.",
+        "github": "https://github.com/timwal78/printing-press-library",
+        "tags": [
+          "cli",
+          "mcp-server",
+          "go",
+          "catalog"
+        ]
+      }
+    ]
+  }
 }
