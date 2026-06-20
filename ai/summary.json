@@ -1,0 +1,67 @@
+{
+  "product": "CRAWLTOLL™",
+  "tagline": "Turn AI scraping into revenue",
+  "description": "CRAWLTOLL is a 3-line Express/Connect middleware that places an x402 paywall in front of AI crawlers. Bot and agent traffic hits HTTP 402 with machine-readable payment terms (USDC on Base). The agent sends an X-PAYMENT header; CRAWLTOLL verifies and settles via the x402 facilitator; content unlocks instantly. Human visitors always browse for free. AP2-native: verifies Google Agent Payments Protocol mandates before honoring payment.",
+  "url": "https://scriptmasterlabs.com",
+  "npm": "https://www.npmjs.com/package/crawltoll",
+  "install": "npx crawltoll init",
+  "license": "MIT",
+  "organization": "ScriptMasterLabs / Script Master Labs LLC (SDVOSB)",
+  "github": "https://github.com/timwal78/crawltoll",
+
+  "quick_start": {
+    "init": "npx crawltoll init",
+    "middleware": "const crawltoll = require('crawltoll'); app.use(crawltoll());",
+    "standalone": "node server.js",
+    "stats": "npx crawltoll stats"
+  },
+
+  "ap2_support": {
+    "description": "AP2-native — verifies Google Agent Payments Protocol (A2A x402 extension) mandates before honoring payment",
+    "mandate_types": ["Intent Mandate", "Cart Mandate", "Payment Mandate"],
+    "signature_algorithm": "ECDSA P-256 / SHA-256 over JCS-canonicalized claims (RFC 8785)",
+    "config": "ap2Mode: 'off' | 'optional' | 'required'"
+  },
+
+  "payment": {
+    "protocol": "x402",
+    "currency": "USDC",
+    "network": "Base mainnet (default) or Base Sepolia (testing)",
+    "default_price": "0.005 USDC per fetch",
+    "settlement": "via x402 facilitator — instant unlock after payment verification"
+  },
+
+  "config_options": {
+    "payTo": "Your USDC wallet address on Base — required",
+    "network": "base or base-sepolia",
+    "priceUSDC": "Price per fetch (default: 0.005)",
+    "freePaths": "Paths always open (default: discovery files like llms.txt, agents.json)",
+    "chargeHumans": "false (default) — flip to gate all traffic including humans",
+    "ap2Mode": "off | optional | required",
+    "ap2TrustedIssuers": "Map of DID key IDs to PEM public keys for AP2 mandate verification"
+  },
+
+  "detected_bots": [
+    "GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended",
+    "Bytespider", "CCBot", "Amazonbot", "Applebot-Extended", "Meta",
+    "curl", "python-requests", "axios", "headless browsers",
+    "any agent already speaking x402"
+  ],
+
+  "generated_files": {
+    "crawltoll.config.json": "Main config (payTo, network, price, freePaths)",
+    "llms.txt": "LLM discovery file — describes paywall policy to AI models",
+    "agents.json": "Agent card — machine-readable pricing and payment terms",
+    "robots.txt additions": "robots.txt entries pointing bots to payment info"
+  },
+
+  "revenue_tracking": "Built-in ledger. View with npx crawltoll stats.",
+
+  "use_cases": [
+    "Monetize AI scrapers crawling your documentation, API references, or premium content",
+    "Gate news archives, research databases, or paywalled content from AI training data harvesters",
+    "Compliance layer ensuring only AP2-authorized agents access sensitive resources"
+  ],
+
+  "compatibility": "Express, Connect, and any Node.js HTTP framework supporting middleware"
+}

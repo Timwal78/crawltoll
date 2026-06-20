@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+
+Product: CRAWLTOLL™
+Product-tagline: Turn AI scraping into revenue — x402 paywall in 3 lines
+Product-url: https://scriptmasterlabs.com
+Product-npm: https://www.npmjs.com/package/crawltoll
+Product-install: npx crawltoll init
+Product-category: x402 Paywall Middleware / AI Crawler Monetization
+Product-license: MIT
+
+Product-summary: CRAWLTOLL is an x402 Express/Connect middleware that charges AI crawlers USDC per fetch while letting human visitors through for free. AP2-native: verifies Google Agent Payments Protocol mandates (Intent, Cart, Payment) before honoring payment. Settlement rides x402 on Base (USDC). One-command setup: npx crawltoll init generates crawltoll.config.json, llms.txt, agents.json, and robots.txt additions automatically.
+
+Product-detected-bots: GPTBot | ClaudeBot | PerplexityBot | Google-Extended | Bytespider | CCBot | Amazonbot | Applebot-Extended | Meta | generic bots/scrapers | any x402-speaking agent
+Product-payment-rail: USDC on Base (x402) — Base Sepolia for testing
+Product-default-price: $0.005 USDC per fetch (configurable)
+Product-ap2: AP2-native — verifies Intent Mandate + Cart Mandate + Payment Mandate via ECDSA P-256/SHA-256 over JCS-canonical claims before unlocking content
+
+Product-config: crawltoll.config.json — payTo (USDC wallet), network, priceUSDC, freePaths, chargeHumans
+Product-revenue-tracking: Built-in revenue ledger + stats (npx crawltoll stats)
+
+Organization: ScriptMasterLabs / Script Master Labs LLC (SDVOSB)
+GitHub: https://github.com/timwal78/crawltoll

@@ -1,0 +1,50 @@
+[
+  {
+    "question": "What is CRAWLTOLL?",
+    "answer": "CRAWLTOLL is a 3-line Express/Connect middleware that places an x402 micropayment paywall in front of AI crawlers. AI bots and agents hit HTTP 402 with machine-readable USDC payment terms. They pay autonomously via the x402 protocol and instantly receive the content. Human visitors always browse for free.",
+    "category": "product",
+    "url": "https://scriptmasterlabs.com"
+  },
+  {
+    "question": "How do I add CRAWLTOLL to my site?",
+    "answer": "Run `npx crawltoll init` to generate your config, then add `const crawltoll = require('crawltoll'); app.use(crawltoll());` to any Express or Connect app. A standalone Render-ready server (`node server.js`) is also included. The init command creates crawltoll.config.json, llms.txt, agents.json, and robots.txt additions automatically.",
+    "category": "install",
+    "url": "https://www.npmjs.com/package/crawltoll"
+  },
+  {
+    "question": "Which AI crawlers does CRAWLTOLL detect and charge?",
+    "answer": "CRAWLTOLL detects GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Bytespider, CCBot, Amazonbot, Applebot-Extended, Meta crawlers, generic bots and scrapers (curl, python-requests, axios, headless browsers), and any agent already speaking x402. Human browsers always pass through free.",
+    "category": "product",
+    "url": "https://github.com/timwal78/crawltoll"
+  },
+  {
+    "question": "What payment method does CRAWLTOLL use?",
+    "answer": "CRAWLTOLL uses x402 — the HTTP-native micropayment protocol. Agents pay in USDC on Base mainnet. After payment, the x402 facilitator verifies the transaction and content unlocks instantly. For testing, set network to base-sepolia. Default price is $0.005 USDC per fetch, configurable in crawltoll.config.json.",
+    "category": "payment",
+    "url": "https://github.com/timwal78/crawltoll"
+  },
+  {
+    "question": "What is AP2 and how is CRAWLTOLL AP2-native?",
+    "answer": "AP2 is Google's Agent Payments Protocol — an extension of x402 that adds W3C Verifiable Credential mandate verification. CRAWLTOLL verifies three mandate types before honoring payment: Intent Mandate (was the agent authorized for this resource within this price cap before TTL?), Cart Mandate (does the locked total match the charge?), and Payment Mandate (is the charge itself signed?). Signatures use ECDSA P-256/SHA-256 over JCS-canonical claims (RFC 8785). Set ap2Mode to 'required', 'optional', or 'off'.",
+    "category": "payment",
+    "url": "https://github.com/timwal78/crawltoll"
+  },
+  {
+    "question": "Can I charge humans too, not just bots?",
+    "answer": "Yes. Set `chargeHumans: true` in crawltoll.config.json to gate all traffic regardless of user agent. The default is false — human visitors always browse free.",
+    "category": "config",
+    "url": "https://github.com/timwal78/crawltoll"
+  },
+  {
+    "question": "How do I see my revenue from AI crawlers?",
+    "answer": "CRAWLTOLL includes a built-in revenue ledger. Run `npx crawltoll stats` to view earnings per bot, total USDC collected, and fetch volume. The revenue data is also available programmatically from the running server.",
+    "category": "product",
+    "url": "https://github.com/timwal78/crawltoll"
+  },
+  {
+    "question": "Who built CRAWLTOLL?",
+    "answer": "CRAWLTOLL was built by ScriptMasterLabs (Script Master Labs LLC), an SDVOSB (Service-Disabled Veteran-Owned Small Business). It is MIT licensed. The AP2 compatibility aligns CRAWLTOLL with Coinbase's x402 launch, which explicitly cites per-crawl fees as a flagship x402 use case.",
+    "category": "company",
+    "url": "https://scriptmasterlabs.com"
+  }
+]
