@@ -1,0 +1,19 @@
+# crawltoll
+
+> Web crawl toll gateway by ScriptMasterLabs. x402 payment rails for metered web access.
+
+This repository is part of the ScriptMasterLabs sovereign AI ecosystem.
+
+## Agent Discovery
+
+- Master llms.txt: https://www.scriptmasterlabs.com/llms.txt
+- Agent quickstart: https://www.scriptmasterlabs.com/agent-start.html
+- OpenAPI spec: https://www.scriptmasterlabs.com/.well-known/openapi.json
+
+## Payment
+
+x402 protocol — RLUSD on XRPL or USDC on Base.
+
+## Data Policy
+
+All data is live and real. No mock, demo, simulation, or placeholder data is permitted anywhere in this codebase.
